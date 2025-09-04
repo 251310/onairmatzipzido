@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>청주 강내면 맛집 지도</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff4203 0%, #ff4028 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff4203, #ff4207);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 120px);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #map {
+            flex: 2;
+            height: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .restaurant-info {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .restaurant-info.active {
+            display: block;
+        }
+
+        .restaurant-info h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #ff4203;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.2s ease;
+        }
+
+        .info-item:hover {
+            transform: translateX(5px);
+            background: #e9ecef;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            flex: 1;
+        }
+
+        .price {
+            background: linear-gradient(45deg, #ff4203, #ff4207);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .recommendation {
+            background: linear-gradient(135deg, #ff4203 0%, #ff4207 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .recommendation h4 {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 50px;
+        }
+
+        .welcome-message h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .category-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+        }
+
+        .filter-btn {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .filter-btn:hover {
+            background: #ff4203;
+            color: white;
+            border-color: #ff4203;
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: #ff4203;
+            color: white;
+            border-color: #ff4203;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .popup-content {
+            text-align: center;
+            padding: 5px;
+        }
+
+        .popup-content h3 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .popup-content p {
+            color: #ff4203;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍽️ ON-AIR 청주 강내면 맛집 지도</h1>
+        <p>교원대부교 주변 맛집을 한눈에! 📍</p>
+    </div>
+
+    <div class="category-filters">
+        <button class="filter-btn active" data-category="all">전체</button>
+        <button class="filter-btn" data-category="한식">한식</button>
+        <button class="filter-btn" data-category="중식">중식</button>
+        <button class="filter-btn" data-category="양식">양식</button>
+        <button class="filter-btn" data-category="분식">분식</button>
+        <button class="filter-btn" data-category="카페">카페/디저트</button>
+        <button class="filter-btn" data-category="기타">기타</button>
+    </div>
+
+    <div class="container">
+        <div id="map"></div>
+        
+        <div class="sidebar">
+            <div class="welcome-message">
+                <h3>🎯 급식이 맛없는 날...</h3>
+                <h3>동아리 회식하는 날...</h3>
+                <h3>부고인을 위해!</h3>
+                <p>지도에서 원하는 맛집 마커를 클릭하면<br>자세한 정보를 볼 수 있어요.</p>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: #adb5bd;">
+                    💡 필터를 사용해서 원하는 카테고리의<br>맛집만 골라볼 수도 있답니다!
+                </p>
+            </div>
+            
+            <div class="restaurant-info" id="restaurant-info">
+                <!-- 선택된 맛집 정보가 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 맛집 데이터
+        const restaurants = [
+            {
+                name: "밥먹고가",
+                address: "충북 청주시 흥덕구 강내면 월탄3길 26-2",
+                phone: "043-239-8945",
+                menu: "육회비빔밥",
+                price: "10,000원",
+                category: "한식",
+                lat: 36.6082255,
+                lng: 127.3554029,
+                recommendation: "육회가 짱 맛있는데 짱 저렴해용 무려 육회김밥이 칠천원 육회 비빔밥은 만원!"
+            },
+            {
+                name: "옛날토종순대&수육국밥",
+                address: "충북 청주시 흥덕구 강내면 월탄리 36-6",
+                phone: "043-908-9032",
+                menu: "순대국밥",
+                price: "7,000원",
+                category: "한식",
+                lat: 36.6074363,
+                lng: 127.3527656,
+                recommendation: "순대국밥 진짜 맛있어요. 공부하고 배고플 때 먹기 좋아요."
+            },
+            {
+                name: "아도르",
+                address: "충북 청주시 흥덕구 강내면 월탄리 231-9",
+                phone: "0507-1354-3181",
+                menu: "소금커피",
+                price: "6,500원",
+                category: "카페",
+                lat: 36.6111748,
+                lng: 127.3490838,
+                recommendation: ""
+            },
+            {
+                name: "만리장성",
+                address: "충북 청주시 흥덕구 강내면 탑연리 339",
+                phone: "043-231-9944",
+                menu: "효성짬뽕",
+                price: "10,000원",
+                category: "중식",
+                lat: 36.6173348,
+                lng: 127.3559968,
+                recommendation: ""
+            },
+            {
+                name: "만남의 광장",
+                address: "충북 청주시 흥덕구 강내면 월탄리 68-2",
+                phone: "043-235-0437",
+                menu: "라면",
+                price: "3,000원",
+                category: "분식",
+                lat: 36.6109560,
+                lng: 127.3555342,
+                recommendation: ""
+            },
+            {
+                name: "MAY 49-10",
+                address: "충북 청주시 흥덕구 강내면 월탄리 49-10",
+                phone: "010-6556-2150",
+                menu: "딸기봉봉",
+                price: "6,500원",
+                category: "카페",
+                lat: 36.6082120,
+                lng: 127.3554251,
+                recommendation: "봄에만 나오는 딸기봉봉이 진짜 맛있어요 야르~"
+            },
+            {
+                name: "리버뷰",
+                address: "충북 청주시 흥덕구 강내면 월탄리 231-17",
+                phone: "0507-1446-0923",
+                menu: "경양식치즈돈까스",
+                price: "12,000원",
+                category: "양식",
+                lat: 36.6115483,
+                lng: 127.3498819,
+                recommendation: "맛있는 양식을 가성비 있게 먹을 수 있고, 조용한 분위기가 좋아요!"
+            },
+            {
+                name: "미소수제돈까스",
+                address: "충북 청주시 흥덕구 강내면 탑연리 305-12",
+                phone: "043-234-5789",
+                menu: "미소수제돈까스",
+                price: "9,500원",
+                category: "양식",
+                lat: 37.1734353,
+                lng: 131.2472409,
+                recommendation: "돈까스가 굉장히 맛잇구여 제 기준으로 특별한 돈가스도 있었어여 거기 파스타 잇는데 미쳣어여 그리고 음식 나오기 전에 스프를 주시는데 진짜 너무조아영"
+            },
+            {
+                name: "줄서는반점",
+                address: "충북 청주시 흥덕구 강내면 월곡리 273-18",
+                phone: "0507-1449-9301",
+                menu: "볶음크림짬뽁",
+                price: "12,000원",
+                category: "중식",
+                lat: 36.6226417,
+                lng: 127.3696896,
+                recommendation: "말 그대로 줄서는 반점입니다. 사람 진짜 많이 가는 맛집..."
+            },
+            {
+                name: "미호왕족발",
+                address: "충북 청주시 흥덕구 강내면 탑연리 275-57",
+                phone: "0507-1487-0143",
+                menu: "왕족발(중)",
+                price: "40,000원",
+                category: "한식",
+                lat: 36.6228757,
+                lng: 127.3590212,
+                recommendation: "진짜 강내 사람들은 다 여기서 먹어요. 어렸을 때부터 자주 먹은 기억이 있습니다!"
+            },
+            {
+                name: "평양순대1호점",
+                address: "충북 청주시 흥덕구 강내면 탑연리 305-9",
+                phone: "043-234-1143",
+                menu: "순대국",
+                price: "9,000원",
+                category: "한식",
+                lat: 36.6214620,
+                lng: 127.3581172,
+                recommendation: ""
+            },
+            {
+                name: "햇뜨마라탕",
+                address: "충북 청주시 흥덕구 강내면 태성탑연로 441-1",
+                phone: "070-4833-8865",
+                menu: "마라탕",
+                price: "100g당 1,980원",
+                category: "기타",
+                lat: 36.6218898,
+                lng: 127.3583296,
+                recommendation: ""
+            },
+            {
+                name: "119마라탕",
+                address: "충북 청주시 흥덕구 강내면 탑연월곡길 75",
+                phone: "043-231-6789",
+                menu: "셀프마라탕(소)",
+                price: "10,000원",
+                category: "기타",
+                lat: 36.6234230,
+                lng: 127.3640174,
+                recommendation: ""
+            },
+            {
+                name: "연희동분식",
+                address: "충북 청주시 흥덕구 강내면 월곡길 27 1층",
+                phone: "043-235-9919",
+                menu: "치킨가라아게",
+                price: "10,000원",
+                category: "분식",
+                lat: 36.6217301,
+                lng: 127.3690822,
+                recommendation: ""
+            },
+            {
+                name: "강내루",
+                address: "충북 청주시 흥덕구 강내면 저산태성로 271",
+                phone: "0507-1496-8859",
+                menu: "하얀순두부짬뽁",
+                price: "12,000원",
+                category: "중식",
+                lat: 36.5793411,
+                lng: 127.3532350,
+                recommendation: ""
+            },
+            {
+                name: "신촌닭의진리",
+                address: "충북 청주시 흥덕구 강내면 탑연1길 11-3",
+                phone: "043-234-0711",
+                menu: "곱도리탕",
+                price: "35,000원",
+                category: "한식",
+                lat: 36.6225435,
+                lng: 127.3602005,
+                recommendation: ""
+            },
+            {
+                name: "블러",
+                address: "충북 청주시 흥덕구 강내면 월탄3길 9 2층",
+                phone: "010-4921-7422",
+                menu: "우삼겹숙주볶음",
+                price: "15,000원",
+                category: "한식",
+                lat: 36.6071478,
+                lng: 127.3541952,
+                recommendation: ""
+            },
+            {
+                name: "미림한식뷔페",
+                address: "충북 청주시 흥덕구 강내면 탑연리 305-9",
+                phone: "043-715-6674",
+                menu: "한식뷔페",
+                price: "8,000원",
+                category: "한식",
+                lat: 36.6214620,
+                lng: 127.3581172,
+                recommendation: ""
+            }
+        ];
+
+        // 지도 초기화
+        const map = L.map('map').setView([36.6124, 127.3560], 15);
+
+        // 지도 타일 레이어 추가
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 카테고리별 색상
+        const categoryColors = {
+            '한식': '#e74c3c',
+            '중식': '#f39c12',
+            '양식': '#3498db',
+            '분식': '#9b59b6',
+            '카페': '#1abc9c',
+            '기타': '#34495e'
+        };
+
+        // 마커들을 저장할 배열
+        let markers = [];
+
+        // 마커 추가 함수
+        function addMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            restaurants.forEach((restaurant, index) => {
+                const marker = L.circleMarker([restaurant.lat, restaurant.lng], {
+                    radius: 8,
+                    fillColor: categoryColors[restaurant.category] || '#95a5a6',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                const popupContent = `
+                    <div class="popup-content">
+                        <h3>${restaurant.name}</h3>
+                        <p>${restaurant.menu}</p>
+                        <p style="color: #e74c3c;">${restaurant.price}</p>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent, {
+                    className: 'custom-popup'
+                });
+
+                marker.on('click', () => showRestaurantInfo(restaurant));
+                
+                // 카테고리 정보 추가
+                marker.category = restaurant.category;
+                markers.push(marker);
+            });
+        }
+
+        // 맛집 정보 표시 함수
+        function showRestaurantInfo(restaurant) {
+            const infoDiv = document.getElementById('restaurant-info');
+            const welcomeMessage = document.querySelector('.welcome-message');
+            
+            welcomeMessage.style.display = 'none';
+            
+            infoDiv.innerHTML = `
+                <h2>${restaurant.name}</h2>
+                <div class="info-item">
+                    <span class="info-label">📍 위치</span>
+                    <span class="info-value">${restaurant.address}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📞 전화</span>
+                    <span class="info-value">${restaurant.phone}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">🍽️ 대표 메뉴</span>
+                    <span class="info-value">${restaurant.menu}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">💰 가격</span>
+                    <span class="info-value price">${restaurant.price}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">🏷️ 분류</span>
+                    <span class="info-value">${restaurant.category}</span>
+                </div>
+                ${restaurant.recommendation ? `
+                    <div class="recommendation">
+                        <h4>💬 추천인의 코멘트</h4>
+                        <p>${restaurant.recommendation}</p>
+                    </div>
+                ` : ''}
+            `;
+            
+            infoDiv.classList.add('active');
+        }
+
+        // 필터 기능
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // 모든 버튼에서 active 클래스 제거
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                // 클릭된 버튼에 active 클래스 추가
+                e.target.classList.add('active');
+                
+                const category = e.target.dataset.category;
+                filterMarkers(category);
+            });
+        });
+
+        function filterMarkers(category) {
+            markers.forEach(marker => {
+                if (category === 'all' || marker.category === category) {
+                    marker.setStyle({
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                } else {
+                    marker.setStyle({
+                        opacity: 0.3,
+                        fillOpacity: 0.2
+                    });
+                }
+            });
+        }
+
+        // 초기 마커 추가
+        addMarkers();
+
+        // 지도 클릭시 사이드바 초기화
+        map.on('click', (e) => {
+            if (e.originalEvent.target.classList.contains('leaflet-container')) {
+                document.querySelector('.welcome-message').style.display = 'block';
+                document.getElementById('restaurant-info').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
